@@ -1,129 +1,89 @@
-# Byte-compiled / optimized / DLL files
-__pycache__/
-*.py[cod]
-*$py.class
+https://www.bankofcanada.ca/rates/interest-rates/bond-yield-curves/
 
-# C extensions
-*.so
+import numpy as np
+import pandas as pd
+import matplotlib.pyplot as plt
+%matplotlib inline
+# We import the database that contains daily yields curves for zero-coupon bonds (Bank of Canada)
+df = pd.read_excel("YC.xlsx", index_col='Date')
+# Our dataframe 
+df.head()
 
-# Distribution / packaging
-.Python
-build/
-develop-eggs/
-dist/
-downloads/
-eggs/
-.eggs/
-lib/
-lib64/
-parts/
-sdist/
-var/
-wheels/
-pip-wheel-metadata/
-share/python-wheels/
-*.egg-info/
-.installed.cfg
-*.egg
-MANIFEST
+# We change the name of the variables
+df.columns = ['3 Mo', '6 Mo', '1 Yr', '2 Yr','3 Yr','5 Yr', '7 Yr', '10 Yr','20 Yr','25 Yr']
+# Remove NaN values from your dataset
+df = df.dropna()
 
-# PyInstaller
-#  Usually these files are written by a python script from a template
-#  before PyInstaller builds the exe, so as to inject date/other infos into it.
-*.manifest
-*.spec
+# 2D Visualization
+%matplotlib inline
+df['3 Mo'].plot(figsize=(15,5), lw=1, color="blue", label='3-Month Government Bond')
+df['6 Mo'].plot( lw=0.5, color="lightblue",label='6-Month Government Bond')
+df['1 Yr'].plot( lw=0.5, color="deepskyblue",label='1-Year Government Bond')
+df['2 Yr'].plot( lw=0.5, color="dodgerblue",label='2-Year Government Bond')
+df['3 Yr'].plot( lw=0.5, color="steelblue",label='3-Year Government Bond')
+df['5 Yr'].plot( lw=0.5, color="blue",label='5-Year Government Bond')
+df['7 Yr'].plot( lw=0.5, color="mediumblue",label='7-Year Government Bond')
+df['10 Yr'].plot( lw=0.5, color="slategrey", label='10-Year Government Bond')
+df['20 Yr'].plot( lw=0.5, color="gray",label='20-Year Government Bond')
+df['25 Yr'].plot( lw=0.5, color="black", grid=True,label='25-Year Government Bond')
+plt.legend()
+plt.xlabel("Date")
+plt.ylabel("Canadian Government Bond Rate")
+plt.title("The Canadian Term Structure of Interest Rate", fontweight='bold')
 
-# Installer logs
-pip-log.txt
-pip-delete-this-directory.txt
+import numpy as np
+from mpl_toolkits.mplot3d import axes3d
+import matplotlib.dates as dates
+import matplotlib.ticker as ticker
+import matplotlib.pyplot as plt
+# Numpy.recarray
+dfn = df.to_records()
+type(dfn)
+dfn
 
-# Unit test / coverage reports
-htmlcov/
-.tox/
-.nox/
-.coverage
-.coverage.*
-.cache
-nosetests.xml
-coverage.xml
-*.cover
-*.py,cover
-.hypothesis/
-.pytest_cache/
+print(dfn.dtype.names)
 
-# Translations
-*.mo
-*.pot
+# Maturity
+header = []
+for name in dfn.dtype.names[1:]:
+    maturity = float(name.split(" ")[0])
+    if name.split(" ")[1] == 'Mo':
+        maturity = maturity / 12
+    header.append(maturity)
+print (header)
 
-# Django stuff:
-*.log
-local_settings.py
-db.sqlite3
-db.sqlite3-journal
+# We create three empty lists 
+x_data = []; y_data = []; z_data = []
+for dt in dfn.Date:
+    dt_num = dates.date2num(dt)
+    x_data.append([dt_num for i in range(len(dfn.dtype.names)-1)])
+print ('x_data: ', x_data[1:5])
 
-# Flask stuff:
-instance/
-.webassets-cache
+for row in dfn:
+    y_data.append(header)
+    z_data.append(list(row.tolist()[1:]))
+print ('y_data: ', y_data[1:5])
+print ('z_data: ', z_data[1:5])
 
-# Scrapy stuff:
-.scrapy
+x = np.array(x_data, dtype='f'); y = np.array(y_data, dtype='f'); z = np.array(z_data, dtype='f')
 
-# Sphinx documentation
-docs/_build/
+print ('x:', x) 
+print ('y: ', y)
+print ('z: ', z)
 
-# PyBuilder
-target/
+%matplotlib inline
+fig = plt.figure(figsize=(15, 10))
+ax = fig.add_subplot(111, projection='3d')
+ax.plot_surface(x, y, z, rstride=2, cstride=1, cmap='magma', vmin=np.nanmin(z), vmax=np.nanmax(z))
+ax.set_title('The Canadian Term Structure of Interest Rates (Zero-Coupon Bonds)')
+ax.set_ylabel('Maturity (\u03C4)')
+ax.set_zlabel('Yield')
+plt.savefig('my_pgf_plot.jpeg')
 
-# Jupyter Notebook
-.ipynb_checkpoints
-
-# IPython
-profile_default/
-ipython_config.py
-
-# pyenv
-.python-version
-
-# pipenv
-#   According to pypa/pipenv#598, it is recommended to include Pipfile.lock in version control.
-#   However, in case of collaboration, if having platform-specific dependencies or dependencies
-#   having no cross-platform support, pipenv may install dependencies that don't work, or not
-#   install all needed dependencies.
-#Pipfile.lock
-
-# PEP 582; used by e.g. github.com/David-OConnor/pyflow
-__pypackages__/
-
-# Celery stuff
-celerybeat-schedule
-celerybeat.pid
-
-# SageMath parsed files
-*.sage.py
-
-# Environments
-.env
-.venv
-env/
-venv/
-ENV/
-env.bak/
-venv.bak/
-
-# Spyder project settings
-.spyderproject
-.spyproject
-
-# Rope project settings
-.ropeproject
-
-# mkdocs documentation
-/site
-
-# mypy
-.mypy_cache/
-.dmypy.json
-dmypy.json
-
-# Pyre type checker
-.pyre/
+def format_date(x, pos=None):
+     return dates.num2date(x).strftime('%Y')
+ax.w_xaxis.set_major_formatter(ticker.FuncFormatter(format_date))
+for tl in ax.w_xaxis.get_ticklabels():
+    tl.set_ha('right')
+    tl.set_rotation(40)
+plt.show()
